@@ -3,9 +3,11 @@
 Generate and edit images with **Nano Banana Pro** from your AI coding agent, using your own Gemini web session. The agent acts as the art director: it writes the prompt, runs one script, **looks at the result** and iterates. Built and tested with Claude Code; the script is a plain command-line tool, so any agent that can run a shell command can use it (see [Works with other agents](#works-with-other-agents)).
 
 <p align="center">
-  <img src="examples/clawd-hat/g1_extreme_close.webp" width="32%" alt="Extreme fisheye close-up">
-  <img src="examples/clawd-hat/f2_topdown_floor.webp" width="32%" alt="Top-down fisheye on a red floor">
-  <img src="examples/clawd-hat/f1_lowangle_hand.webp" width="32%" alt="Low-angle fisheye with a hand reaching the lens">
+  <img src="examples/hero/poster-retro-skill.webp" width="46%" alt="Retro printed poster for the Nano Banana Pro skill">
+  <img src="examples/hero/poster-crystal-svgs.webp" width="46%" alt="A hand holding a glowing crystal Clawd with the line SVGs are overrated">
+</p>
+<p align="center">
+  <img src="examples/hero/selfie-clawd-hat.webp" width="70%" alt="A woman in a Clawd-style orange fur hat taking a selfie">
 </p>
 
 > **Heads up.** This drives the **unofficial** Gemini web interface through the [`gemini-webapi`](https://github.com/HanaokaYuzu/Gemini-API) library, with your own logged-in session. It is not the official API, it can break when Google changes the site, and it spends your plan's daily credits. Use it only with your own account and within Google's terms. This project is not affiliated with Google or Anthropic.
