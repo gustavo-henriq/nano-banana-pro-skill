@@ -1,0 +1,14 @@
+{
+ "format": "portrait 3:4, candid editorial street photo shot on a phone with natural daylight, vivid colors, sharp, natural skin texture",
+ "task": "Recreate reference image 1 as exactly as possible (same camera framing, same pose, same background, same clothing), but replace the girl with the woman from reference image 2.",
+ "scene_and_pose_from_reference_1": "outdoors on a city street beside a rusty metal electricity tower and a steel pole, bright blue sky with clouds and power lines; she leans toward the camera, her left arm stretched out to the side with the hand up near the top-left of the frame making a relaxed 'OK' / peace-like hand gesture with a yellow ring, head tilted slightly, lips in a small pout, looking at the camera; a small white round pendant device hangs on her neck; she wears a brown-and-cream striped cropped top with buttons and a lace detail",
+ "model_from_reference_2": "the exact same woman as reference image 2: same face, fair white skin with freckles, grey-blue eyes, hot-pink star blush across the nose and cheeks, silver rhinestone brow gems, glossy pink lips with a small silver lip ring, small multicolor glitter stars on one cheekbone; long layered wolf-cut hair in bubblegum pink fading to hot pink at the ends, with wispy bangs; wearing the same orange fluffy faux-fur ushanka with the glossy inflated vinyl Clawd badge (blocky pixel-art mascot with stubby side arms, four short legs, two small black square eyes) centered on the front of the crown",
+ "negative": [
+  "do not keep the teal hair",
+  "do not copy the face of the girl in reference image 1",
+  "no scarf",
+  "no text",
+  "no extra fingers",
+  "no distorted hands"
+ ]
+}

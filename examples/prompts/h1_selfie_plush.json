@@ -1,0 +1,86 @@
+{
+  "instruction": "GENERATE ONE IMAGE NOW. Output only the finished image, with no text, no explanation and no rewritten prompt. Follow this JSON specification exactly.",
+  "image_type": "photorealistic phone-camera selfie portrait, front camera, candid fashion-editorial look, no filters beyond a soft warm tone",
+  "aspect_ratio": "3:4 portrait",
+  "reference_images": {
+    "image_1": "pose, framing, lighting and composition reference (selfie holding a plush toy over the lower face); copy the pose and framing, do NOT copy the person, hair color, hat or clothes",
+    "image_2": "the Clawd mascot: use it as the exact design of the plush toy in her hand",
+    "image_3": "the orange ushanka hat design to reproduce on her head"
+  },
+  "camera": {
+    "type": "smartphone front camera, wide ~24mm equivalent, arm's length selfie",
+    "distance_to_face": "about 35 cm",
+    "angle": "camera slightly above eye level, a few degrees of downward tilt, lens centered on her eyes",
+    "framing": "head and hat fill the top 45 percent of the frame; chest and necklaces visible in the bottom 30 percent; her left hand holding the plush enters from the lower-left edge; slight phone-lens perspective distortion",
+    "focus": "sharp on the eyes and the plush, very soft falloff at the edges"
+  },
+  "subject": {
+    "ethnicity_skin": "young white woman, fair skin with warm pink undertones, natural texture with visible pores, a few softly drawn faux freckles across the nose and cheekbones",
+    "age_feel": "early twenties",
+    "face": "narrow oval face, defined but soft cheekbones, big doll-like dark brown eyes with long curled lashes and extra lower lashes drawn on like manga lashes, straight natural eyebrows",
+    "makeup": "warm brown bronzer smudged in a band across the nose bridge and cheekbones like in image 1, light pink blush, faint freckles, glossy lips (mostly hidden by the plush)",
+    "expression": "calm, cute and slightly mischievous; eyes looking straight into the lens, eyebrows relaxed, mouth completely hidden behind the plush toy",
+    "head_pose": "head straight and facing the camera, tilted a few degrees to her left"
+  },
+  "hair": {
+    "color": "jet black",
+    "texture": "perfectly straight, glossy, sleek",
+    "length": "long, falling past the shoulders and chest on both sides",
+    "style": "blunt full bangs cut straight across the eyebrows, hair tucked behind nothing, falls forward over the shoulders; a few fine flyaways catching the light; no blue, no pink"
+  },
+  "headwear": {
+    "design": "the orange fluffy faux-fur ushanka from image 3 with fur ear flaps; worn level and low across the forehead so it sits just above the bangs, with a glossy inflated vinyl Clawd badge centered on the front of the crown",
+    "badge": "blocky pixel-art mascot badge, terracotta orange #D97757, two small black square eyes, two stubby side arms, four short legs",
+    "note": "the hat replaces the lilac beret of image 1; the ear flaps hang beside her face behind the hair"
+  },
+  "held_object": {
+    "item": "a small plush toy of the Clawd mascot (image 2), about 14 cm wide",
+    "design": "soft terracotta-orange #D97757 velour plush, blocky pixel-art body, two small black square button eyes, two stubby side arms, four short square legs hanging at the bottom, tiny stitched seams, slightly squishy",
+    "how_held": "held by her left hand (on the left of the frame) pressed up against her chin and mouth, covering the lower half of her face from nose to chin, tilted a few degrees, the legs dangling over her necklaces; her thumb on the front edge and fingers wrapped behind it",
+    "hand": "slender hand with long almond-shaped pale pink gel nails, two thin silver rings; natural knuckles and skin creases, exactly five fingers"
+  },
+  "clothing": {
+    "top": "black fuzzy mohair-knit short-sleeve top with a pale lavender and magenta knitted pattern around the neckline, as in image 1",
+    "jewelry": [
+      "long strand of grey-silver pearls hanging to the chest",
+      "a silver ornate heart-shaped locket pendant with a violet center",
+      "a small chain with a tiny star charm"
+    ]
+  },
+  "background": {
+    "setting": "a plain indoor wall and ceiling corner, warm cream / pale butter-yellow wall, slightly out of focus",
+    "details": "soft vertical shadow on the right, no objects, no windows"
+  },
+  "lighting": {
+    "type": "soft warm window light mixed with indoor ambient light, no harsh flash",
+    "direction": "from the front-left, gentle",
+    "color_temperature": "warm, around 4200K, creamy highlights, slightly lifted shadows",
+    "skin": "luminous and soft, subtle shine on the forehead and nose"
+  },
+  "color_palette": [
+    "#D97757 Clawd orange",
+    "#101010 jet black hair",
+    "#FDF3DC warm cream wall",
+    "#C9B8F0 lavender accents",
+    "#F2B8C6 nail pink",
+    "#B8B8BE pearl grey"
+  ],
+  "mood": "cozy, kawaii-meets-alt, intimate, phone-selfie authenticity, scroll-stopping",
+  "quality": "high resolution, crisp detail on eyelashes, plush fabric fibers and hat fur; natural skin; realistic hands",
+  "negative_prompt": [
+    "no blue hair",
+    "no pink hair",
+    "do not copy the face or hair color of image 1",
+    "no lilac beret",
+    "no Sanrio / My Melody character, the toy must be Clawd",
+    "no extra fingers",
+    "no fused fingers",
+    "no distorted hand",
+    "no visible mouth",
+    "no text or watermarks",
+    "no logos",
+    "no cartoon or illustration look",
+    "no heavy beauty filter",
+    "no over-smoothed skin"
+  ]
+}

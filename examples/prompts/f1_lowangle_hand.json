@@ -1,0 +1,18 @@
+{
+ "format": "portrait 4:5, scroll-stopping high-fashion editorial photograph with an extreme 12mm fisheye lens, strong barrel distortion, direct on-camera flash, crisp, saturated, natural skin texture",
+ "identity": "the exact same woman as reference image 1: pale angular face, half-lidded tired grey-blue eyes with faint violet shadows, small silver lip ring, bare skin, long shaggy layered wolf-cut hair in bubblegum pink fading to hot pink at the ends with wispy bangs; cold, unbothered, confident expression, no smile, no freckles, no star makeup",
+ "hat": "the same orange fluffy faux-fur ushanka as reference images 1 and 2, with fur ear flaps and the glossy inflated vinyl Clawd badge (blocky pixel-art mascot with stubby side arms, four short legs, two small black square eyes) on the front of the crown, clearly visible",
+ "negative": [
+  "no smile",
+  "no goofy expression",
+  "no freckles",
+  "no star makeup",
+  "no scarf",
+  "no text",
+  "no distorted hands",
+  "no extra fingers"
+ ],
+ "concept": "low-angle fisheye looking up at her from near the ground; she leans down toward the lens with a flat cold stare, one arm stretched toward the camera so her hand with silver rings and dark-painted nails is huge and slightly out of focus in the foreground, the other hand on her hip",
+ "outfit": "oversized glossy cobalt-blue puffer jacket, black cargo pants with silver chain",
+ "setting": "saturated cobalt-blue and lilac color-blocked wall with a hard flash shadow, bright sky edge at the top"
+}

@@ -1,0 +1,33 @@
+# Secrets: never commit session cookies (any name that looks like one)
+*cookies*.json
+*cookies*.json.txt
+*cookies*.txt
+*.cookies
+!cookies.example.json
+.env
+.env.*
+*.pem
+*.key
+
+# Local Claude Code settings and archives
+.claude/
+*.zip
+
+# Local state and logs
+quota_state.json
+*.log
+.nano-banana-pro/
+
+# Raw generations and reference photos (only the optimized examples/ are published)
+out/
+raw/
+_references-local/
+refs/
+
+# Python / OS
+__pycache__/
+*.pyc
+.venv/
+venv/
+.DS_Store
+Thumbs.db
