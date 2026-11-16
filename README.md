@@ -241,4 +241,4 @@ examples/              optimized WebP examples and prompts
 
 ## License
 
-MIT, see [LICENSE](LICENSE).
+All rights reserved. See [LICENSE](LICENSE).
