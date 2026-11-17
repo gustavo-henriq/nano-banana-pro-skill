@@ -1,6 +1,6 @@
 ---
 name: nano-banana-pro
-description: Generate or edit images (portraits, product shots, banners, illustrations, mockups, visual assets) with Nano Banana Pro through the user's own Gemini web session. Use it when the user asks to create, generate, edit or refine an image, or when a project needs a visual asset that code or SVG cannot produce. The agent writes the prompt, runs the script, looks at the result and iterates.
+description: Generate or edit images (portraits, product shots, banners, illustrations, mockups, visual assets) and generate short VIDEOS (Veo, with --video) with Nano Banana Pro through the user's own Gemini web session. Use it when the user asks to create, generate, edit or refine an image, to create a video or animated clip, or when a project needs a visual asset that code or SVG cannot produce. The agent writes the prompt, runs the script, looks at the result and iterates.
 ---
 
 # Nano Banana Pro (Gemini web, driven by an AI agent)
@@ -23,13 +23,29 @@ The script is `scripts/nanobanana.py` inside this skill's base directory. **Run 
 5. **Iterate 2-3 times at most**, adjusting the prompt with what was missing. For a small fix, pass the previous image with `--ref` and ask only for the change. Then show the user and ask.
 6. Save assets inside the project (`assets/`, `docs/`), never loose in the project root.
 
+## Videos (`--video`)
+
+**This skill also generates videos.** The same Gemini session produces short clips with Veo; the script just has to be told to ask for a video and to read `response.videos` instead of images. Without `--video` it always asks for an image and will never return a video.
+
+```bash
+python -I "<skill-dir>/scripts/nanobanana.py" "a banana slowly rotating on a wooden table, soft studio light" -o out/banana.mp4 --video --aspect 16:9
+```
+
+- Output: `SAVED <path>.mp4` and `THUMB <path>.jpg`. **Look at the thumbnail with Read** to judge the clip (you cannot watch the mp4); tell the user you only checked the thumbnail.
+- Write the prompt like a shot description: subject, motion, camera move, lighting, duration ("5 seconds"). Describe the motion in words; a still `--ref` image can set the first frame.
+- Videos are slower (default timeout 600s) and Google often answers with a generic error or "at full capacity, high traffic generating videos" instead of a video. The script retries on its own (`--retries`, default 2, waiting 10s and alternating `gemini-carbon` / `gemini-flash-lite`). If it still fails (exit 1), wait a few minutes and try again; do not loop.
+- Tested 2026-11-17 on an AI Pro account: `gemini-carbon` and `gemini-pro` failed on the first tries (error / empty reply), `gemini-flash-lite` returned a 16:9 MP4 (~3 MB, 5 s). One sample only, so the model difference is not proven; failures looked like Google-side instability, not a plan limit.
+- Video spends the same daily credits and is probably costlier than an image: run `--quota` before more than one or two clips.
+
 ## Reading the script output
 
 The script prints plain lines. React to them:
 
 | Line | Meaning | What to do |
 |---|---|---|
-| `SAVED <path>` | image saved | open it with Read |
+| `SAVED <path>` | image (or .mp4 with `--video`) saved | open an image with Read |
+| `THUMB <path>` | video thumbnail (only with `--video`) | open it with Read to judge the clip |
+| `RETRY n/m` (stderr) | Google returned no video, trying again | nothing, just wait |
 | `MODEL <name>` | model that was used | mention it if the user compares models |
 | `QUOTA <n>% left ...` | a threshold was crossed (50%, 25%, 10%, 5% left) | **tell the user in one short sentence**, then continue |
 | `LIMIT_REACHED ...` | daily credits are over (exit 4) | stop, tell the user when it resets, do not retry |
@@ -73,3 +89,4 @@ Never print, read aloud, log or commit cookie values, and do not open the cookie
 - Expired cookies give exit code 2: ask the user to reopen gemini.google.com while logged in and refresh the cookies.
 - Resolution depends on the aspect ratio, not on the model (3:4 and 4:5 come out around 1800x2400 and 1850x2300; 3:2 around 2500x1700).
 - For vector logos, simple icons or diagrams, SVG or code is usually better than a generated image.
+- Videos are short clips only (a few seconds). Longer or edited video needs another tool.

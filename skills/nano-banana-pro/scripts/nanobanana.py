@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Generate or edit images with Nano Banana Pro through the Gemini web app.
+"""Generate or edit images (and, with --video, videos) with Nano Banana Pro through the Gemini web app.
 
 It reuses the Google session of the logged-in user (cookies), through the
 unofficial `gemini-webapi` library. It is NOT the official API.
@@ -7,6 +7,7 @@ unofficial `gemini-webapi` library. It is NOT the official API.
 Usage:
   python nanobanana.py "<prompt>" -o out.png [--aspect 3:4] [--ref a.png --ref b.png] [-n 1]
   python nanobanana.py --prompt-file spec.json -o out.png --aspect 4:5 --model gemini-carbon
+  python nanobanana.py "<prompt>" -o out.mp4 --video [--aspect 16:9] [--ref first_frame.png]
   python nanobanana.py --quota            # show the remaining daily credits and exit
 
 Credentials, in this order:
@@ -18,7 +19,9 @@ Credentials, in this order:
 
 Output (stdout), one item per line:
   MODEL <name>              the model that was used
-  SAVED <path>              one line per saved image
+  SAVED <path>              one line per saved image (or .mp4 with --video)
+  THUMB <path>              video thumbnail (.jpg), only with --video
+  RETRY n/m                 (stderr) video retry after Google returned no video
   QUOTA <text>              only when a threshold (50%, 25%, 10%, 5% left) is crossed
   LIMIT_REACHED <text>      the daily limit is over (exit code 4)
 
@@ -53,6 +56,8 @@ os.environ.setdefault("GEMINI_COOKIE_PATH", str(HOME_DIR / "cache"))
 # Announce once per reset window when the remaining share drops to each of these (percent).
 THRESHOLDS = (50, 25, 10, 5)
 DEFAULT_MODEL = "gemini-carbon"
+# Video: on retry the script alternates to this model (the one that returned a video in testing).
+FALLBACK_VIDEO_MODEL = "gemini-flash-lite"
 # Quota buckets reported by the web app: 4 = Pro-class models, 11 = Flash-class models.
 PRO_ACTION, FLASH_ACTION = 4, 11
 
@@ -163,13 +168,15 @@ def build_prompt(args):
         print("Give a prompt or --prompt-file", file=sys.stderr)
         sys.exit(1)
 
+    kind = "video" if args.video else "image"
     if prompt.startswith(("{", "[")):
         prompt = (
-            "Generate ONE image now. Output only the finished image, no text, no explanation "
+            f"Generate ONE {kind} now. Output only the finished {kind}, no text, no explanation "
             "and no rewritten prompt. Follow this JSON specification exactly:\n" + prompt
         )
-    elif not prompt.lower().startswith(("create an image", "generate an image")):
-        prompt = f"Create an image of: {prompt}"
+    elif not prompt.lower().startswith((f"create a {kind}", f"create an {kind}",
+                                        f"generate a {kind}", f"generate an {kind}")):
+        prompt = f"Create a {kind} of: {prompt}" if args.video else f"Create an image of: {prompt}"
     if args.aspect:
         prompt += f"\nAspect ratio: {args.aspect}."
     return prompt
@@ -278,35 +285,59 @@ async def run(args):
 
     limit_error = getattr(gex, "UsageLimitExceededError", ())
     started = time.time()
-    try:
-        response = await asyncio.wait_for(client.generate_content(prompt, **kwargs), args.timeout)
-    except asyncio.TimeoutError:
-        print(
-            f"Timed out after {args.timeout}s. This often means the daily limit is over: "
-            "run with --quota to check.",
-            file=sys.stderr,
-        )
-        sys.exit(5)
-    except limit_error as e:
-        print(f"LIMIT_REACHED {e}")
-        sys.exit(4)
+    attempts = 1 + (max(args.retries, 0) if args.video else 0)
+    media = []
+    for attempt in range(attempts):
+        if attempt:  # video retry: Google often answers "at full capacity" or a generic error
+            print(f"RETRY {attempt}/{attempts - 1} (no video returned)", file=sys.stderr)
+            if not args.model:  # alternate to the model that worked in testing
+                kwargs["model"] = model = FALLBACK_VIDEO_MODEL if model == DEFAULT_MODEL else DEFAULT_MODEL
+            await asyncio.sleep(10)
+        try:
+            response = await asyncio.wait_for(client.generate_content(prompt, **kwargs), args.timeout)
+        except asyncio.TimeoutError:
+            print(
+                f"Timed out after {args.timeout}s. This often means the daily limit is over: "
+                "run with --quota to check.",
+                file=sys.stderr,
+            )
+            sys.exit(5)
+        except limit_error as e:
+            print(f"LIMIT_REACHED {e}")
+            sys.exit(4)
 
-    images = response.images
-    if not images:
+        media = response.videos if args.video else response.images
+        if media:
+            break
         message = (response.text or "").strip()
         if "limit" in message.lower() and "reset" in message.lower():
             print(f"LIMIT_REACHED {message}")
             sys.exit(4)
-        print(f"No image generated. Model replied: {message[:500]}", file=sys.stderr)
+
+    kind = "video" if args.video else "image"
+    if not media:
+        hint = ""
+        if not args.video and response.videos:
+            hint = " (the model returned a VIDEO: rerun with --video)"
+        print(f"No {kind} generated{hint}. Model replied: {message[:500]}", file=sys.stderr)
         sys.exit(1)
 
     out = Path(args.out)
     out.parent.mkdir(parents=True, exist_ok=True)
     print(f"MODEL {model}")
-    for i, img in enumerate(images[: args.n]):
+    for i, item in enumerate(media[: args.n]):
         name = out.name if i == 0 else f"{out.stem}_{i + 1}{out.suffix}"
-        saved = await img.save(path=str(out.parent), filename=name, verbose=False)
-        print(f"SAVED {saved}")
+        if args.video:
+            # Video links answer 206 while rendering; save() polls every 10s, so cap the wait.
+            saved = await asyncio.wait_for(
+                item.save(path=str(out.parent), filename=name, verbose=False), args.timeout
+            )
+            print(f"SAVED {saved['video']}")
+            if saved.get("video_thumbnail"):
+                print(f"THUMB {saved['video_thumbnail']}")
+        else:
+            saved = await item.save(path=str(out.parent), filename=name, verbose=False)
+            print(f"SAVED {saved}")
 
     try:  # refresh the credits after the generation, then announce threshold crossings
         await client._fetch_quota()
@@ -321,16 +352,23 @@ def main():
     p = argparse.ArgumentParser(description="Nano Banana Pro through the Gemini web app")
     p.add_argument("prompt", nargs="?", help="Detailed prompt (English works best)")
     p.add_argument("--prompt-file", help="Read the prompt from a file (use it for JSON or long text)")
-    p.add_argument("-o", "--out", help="Output file path (.png)")
+    p.add_argument("-o", "--out", help="Output file path (.png, or .mp4 with --video)")
+    p.add_argument("--video", action="store_true",
+                   help="Generate a VIDEO (Veo) instead of an image; saves .mp4 plus a .jpg thumbnail")
+    p.add_argument("--retries", type=int, default=2,
+                   help="Video only: extra attempts when Google returns no video (default 2)")
     p.add_argument("--aspect", help="Aspect ratio, e.g. 1:1, 16:9, 9:16, 4:5")
     p.add_argument("--ref", action="append", help="Reference/edit image (repeatable)")
     p.add_argument("-n", type=int, default=1, help="How many images to save (default 1)")
     p.add_argument("--model", help=f"gemini-carbon (default), gemini-pro, gemini-flash, gemini-flash-lite")
     p.add_argument("--browser", help="chrome | edge | firefox | brave (read cookies from the browser)")
-    p.add_argument("--timeout", type=int, default=300, help="Seconds to wait for the image (default 300)")
+    p.add_argument("--timeout", type=int, default=None,
+                   help="Seconds to wait (default 300 for images, 600 for video)")
     p.add_argument("--quota", action="store_true", help="Print the remaining credits and exit")
     p.add_argument("--verbose", action="store_true", help="Print the elapsed time")
     args = p.parse_args()
+    if args.timeout is None:
+        args.timeout = 600 if args.video else 300
     if not args.quota and not args.out:
         p.error("-o/--out is required unless --quota is used")
     asyncio.run(run(args))

@@ -1,6 +1,6 @@
 # Nano Banana Pro skill for AI coding agents
 
-Generate and edit images with **Nano Banana Pro** from your AI coding agent, using your own Gemini web session. The agent acts as the art director: it writes the prompt, runs one script, **looks at the result** and iterates. Built and tested with Claude Code; the script is a plain command-line tool, so any agent that can run a shell command can use it (see [Works with other agents](#works-with-other-agents)).
+Generate and edit images, and generate short **videos** (Veo, with `--video`), with **Nano Banana Pro** from your AI coding agent, using your own Gemini web session. The agent acts as the art director: it writes the prompt, runs one script, **looks at the result** and iterates. Built and tested with Claude Code; the script is a plain command-line tool, so any agent that can run a shell command can use it (see [Works with other agents](#works-with-other-agents)).
 
 <p align="center">
   <img src="examples/hero/poster-retro-skill.webp" width="48%" alt="Retro printed poster for the Nano Banana Pro skill">
@@ -14,6 +14,7 @@ Generate and edit images with **Nano Banana Pro** from your AI coding agent, usi
 - One script, no subagents: `scripts/nanobanana.py`.
 - A skill that tells the agent how to brief, run, review and iterate.
 - **Quota alerts.** The script tells the agent when you cross 50%, 25%, 10% and 5% of your daily credits, and stops cleanly when the limit is over instead of hanging for minutes.
+- **Video too.** Add `--video` and the same Gemini session returns a short `.mp4` plus a thumbnail. Without the flag the script always asks for an image.
 - Model choice per image (`gemini-carbon` by default) and what we learned about each one (below).
 
 ## Install
@@ -145,7 +146,9 @@ python skills/nano-banana-pro/scripts/nanobanana.py --quota
 | `--aspect 4:5` | aspect ratio; resolution depends on it, not on the model |
 | `--ref a.png --ref b.png` | reference or edit images, repeatable |
 | `--model` | `gemini-carbon` (default), `gemini-pro`, `gemini-flash`, `gemini-flash-lite` |
-| `--timeout 300` | seconds to wait for the image |
+| `--timeout 300` | seconds to wait for the image (videos default to 600) |
+| `--video` | generate a short video (Veo) instead of an image; saves `.mp4` + `.jpg` thumbnail, use `-o out.mp4` |
+| `--retries 2` | video only: extra attempts when Google returns no video ("high traffic" or a generic error) |
 | `--quota` | print the remaining credits and exit |
 
 ### Output lines
@@ -153,6 +156,7 @@ python skills/nano-banana-pro/scripts/nanobanana.py --quota
 ```text
 MODEL gemini-carbon
 SAVED /path/out/g1.png
+THUMB /path/out/g1.jpg      (only with --video)
 QUOTA 48% left (1161/2400 credits), resets at 16:38  (crossed the 50% mark)
 ```
 
