@@ -45,7 +45,9 @@ Use `.claude/skills/` inside a project instead if you want it for that project o
 
 ### 2. Give it your Gemini session (cookies)
 
-There is no API key here. The script acts as your browser, so it needs the two cookies that prove you are logged in to Google.
+There is no API key here. The script acts as your browser, so it needs the cookies that prove you are logged in to Google.
+
+> **Changed in November 2026.** Since Gemini web build 20261119, the two cookies below are no longer enough on their own: Google sends them to the sign-in page (see [gemini-webapi issue #381](https://github.com/HanaokaYuzu/Gemini-API/issues/381)). The full set of Google cookies of a signed-in profile is needed. The simplest way is **Firefox**: log in to [gemini.google.com](https://gemini.google.com) in Firefox and run the script with `--browser firefox` (no file needed, and no admin rights on Windows). A full [Cookie-Editor](https://cookie-editor.com) JSON export saved as `cookies.json` is also accepted if it contains `SID`, `HSID` and `APISID` (Brave exports were tested and miss them; Edge/Chrome are untested). The manual steps below are kept for reference.
 
 1. Open [gemini.google.com](https://gemini.google.com) while logged in.
 2. Open the browser developer tools (`F12`).
@@ -69,7 +71,7 @@ export GEMINI_1PSID="..."
 export GEMINI_1PSIDTS="..."
 ```
 
-Check that it works without spending anything: `python skills/nano-banana-pro/scripts/nanobanana.py --quota` prints your remaining credits. The cookies expire from time to time; when they do the script exits with code 2 and you repeat the steps above.
+Check that it works without spending anything: `python skills/nano-banana-pro/scripts/nanobanana.py --quota` (add `--browser firefox` for the Firefox route) prints your remaining credits. The cookies expire from time to time; when they do the script exits with code 2 and you repeat the steps above.
 
 ## Works with other agents
 

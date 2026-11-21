@@ -106,40 +106,75 @@ def harden_home():
         )
 
 
+# Since Gemini web build 20261119, __Secure-1PSID/1PSIDTS alone redirect to the Google sign-in
+# page. The full set of Google cookies of a signed-in profile is needed, each one kept on its own
+# domain (OSID/__Secure-OSID are host-only cookies of gemini.google.com; putting them on
+# .google.com breaks image downloads with 403). See HanaokaYuzu/Gemini-API issue #381.
+FULL_COOKIES = []  # [(domain, name, value)]
+
+
+def _keep(domain, name, value):
+    if "google.com" in (domain or "") and name and value is not None:
+        FULL_COOKIES.append((domain, name, value))
+
+
+def _load_browser_cookies(browser):
+    """Read the full Google cookie set from a local browser profile; None if not signed in."""
+    try:
+        import browser_cookie3
+    except ImportError:
+        print("browser-cookie3 is not installed: pip install browser-cookie3", file=sys.stderr)
+        sys.exit(3)
+    loader = getattr(browser_cookie3, browser, None)
+    if loader is None:
+        print(f"Unknown browser: {browser}", file=sys.stderr)
+        sys.exit(3)
+    try:
+        cookies = list(loader(domain_name="google.com"))
+    except Exception as e:
+        print(
+            f"Could not read the {browser} cookies ({type(e).__name__}: {e}). "
+            "Use a cookies file or environment variables instead.",
+            file=sys.stderr,
+        )
+        sys.exit(2)
+    for c in cookies:
+        _keep(c.domain, c.name, c.value)
+    jar = {c.name: c.value for c in cookies}
+    if jar.get("__Secure-1PSID"):
+        return jar["__Secure-1PSID"], jar.get("__Secure-1PSIDTS")
+    FULL_COOKIES.clear()
+    print(f"No Google session found in {browser}: log in to gemini.google.com there first.",
+          file=sys.stderr)
+    return None
+
+
 def load_cookies(browser):
     psid = os.environ.get("GEMINI_1PSID")
     psidts = os.environ.get("GEMINI_1PSIDTS")
     if psid:
         return psid, psidts
 
+    # An explicit --browser wins over a cookies file, so a stale file cannot shadow it.
+    if browser:
+        found = _load_browser_cookies(browser)
+        if found:
+            return found
+
     for cookie_file in COOKIE_FILES:
         if cookie_file.exists():
-            data = json.loads(cookie_file.read_text(encoding="utf-8"))
+            data = json.loads(cookie_file.read_text(encoding="utf-8-sig"))
+            if isinstance(data, list):  # Cookie-Editor export: [{name, value, domain, ...}]
+                for c in data:
+                    _keep(c.get("domain"), c.get("name"), c.get("value"))
+                data = {n: v for _, n, v in FULL_COOKIES}
             psid = data.get("__Secure-1PSID")
             if psid:
+                if len(FULL_COOKIES) < 3:
+                    print("Warning: only __Secure-1PSID/1PSIDTS found. Google now needs the full cookie "
+                          "set: use --browser firefox, or export all cookies of gemini.google.com "
+                          "(Cookie-Editor > Export > JSON).", file=sys.stderr)
                 return psid, data.get("__Secure-1PSIDTS")
-
-    if browser:
-        try:
-            import browser_cookie3
-        except ImportError:
-            print("browser-cookie3 is not installed: pip install browser-cookie3", file=sys.stderr)
-            sys.exit(3)
-        loader = getattr(browser_cookie3, browser, None)
-        if loader is None:
-            print(f"Unknown browser: {browser}", file=sys.stderr)
-            sys.exit(3)
-        try:
-            jar = {c.name: c.value for c in loader(domain_name="google.com")}
-        except Exception as e:
-            print(
-                f"Could not read the {browser} cookies ({type(e).__name__}: {e}). "
-                "Use a cookies file or environment variables instead.",
-                file=sys.stderr,
-            )
-            sys.exit(2)
-        if jar.get("__Secure-1PSID"):
-            return jar["__Secure-1PSID"], jar.get("__Secure-1PSIDTS")
 
     print(
         "No credentials. Set GEMINI_1PSID/GEMINI_1PSIDTS, create "
@@ -255,6 +290,27 @@ def announce_quota(client, model, force=False):
 
 
 # --------------------------------------------------------------------------- run
+def _patch_gemini_webapi(GeminiClient, gex):
+    """Workarounds for gemini-webapi 2.1.1 against Gemini web build 20261119 (issue #381)."""
+    if getattr(GeminiClient, "_nb_patched", False):
+        return
+    from gemini_webapi.constants import GRPC
+    from gemini_webapi.types import RPCData
+    orig = GeminiClient._batch_execute
+
+    async def _batch_execute(self, payloads, *a, **kw):
+        # The sign-in page also carries an SNlM0e token, so init "succeeds" on it: treat as auth failure.
+        if "identityfrontend" in (getattr(self, "build_label", "") or ""):
+            raise gex.AuthError("Redirected to the Google sign-in page: cookies are incomplete or expired.")
+        # GET_USER_STATUS now expects payload [1]; [] returns HTTP 400.
+        payloads = [RPCData(rpcid=p.rpcid, payload="[1]", identifier=p.identifier)
+                    if p.rpcid == GRPC.GET_USER_STATUS and p.payload == "[]" else p for p in payloads]
+        return await orig(self, payloads, *a, **kw)
+
+    GeminiClient._batch_execute = _batch_execute
+    GeminiClient._nb_patched = True
+
+
 async def run(args):
     try:
         from gemini_webapi import GeminiClient, set_log_level
@@ -266,9 +322,21 @@ async def run(args):
 
     harden_home()
     psid, psidts = load_cookies(args.browser)
+    _patch_gemini_webapi(GeminiClient, gex)
     client = GeminiClient(psid, psidts)
+    if FULL_COOKIES:
+        from curl_cffi.requests import Cookies
+        jar = Cookies()
+        for domain, name, value in FULL_COOKIES:
+            jar.set(name, value, domain=domain, path="/", secure=True)
+        client._cookies = jar
     try:
-        await client.init(timeout=90, auto_refresh=True)
+        # init() can deadlock forever on a non-200 init RPC (issue #381): always bound it.
+        await asyncio.wait_for(client.init(timeout=90, auto_refresh=True), 60)
+    except asyncio.TimeoutError:
+        print("Authentication failed: Gemini init did not answer in 60s (usually incomplete or "
+              "expired cookies; see 'Authentication' in SKILL.md).", file=sys.stderr)
+        sys.exit(2)
     except Exception as e:  # AuthError and friends
         print(f"Authentication failed ({type(e).__name__}): {e}", file=sys.stderr)
         sys.exit(2)

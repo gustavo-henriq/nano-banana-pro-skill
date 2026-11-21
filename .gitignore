@@ -2,6 +2,9 @@
 *cookies*.json
 *cookies*.json.txt
 *cookies*.txt
+*cookies*.bak
+*cookies*.json.*
+*cookies*.backup
 *.cookies
 !cookies.example.json
 .env

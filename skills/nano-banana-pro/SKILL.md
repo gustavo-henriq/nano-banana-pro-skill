@@ -78,8 +78,13 @@ pip install gemini-webapi browser-cookie3
 
 Authentication, in order:
 1. `GEMINI_1PSID` and `GEMINI_1PSIDTS` environment variables.
-2. A cookies file at `~/.nano-banana-pro/cookies.json` (or `$NANO_BANANA_HOME/cookies.json`) with `{"__Secure-1PSID": "...", "__Secure-1PSIDTS": "..."}`.
-3. `--browser chrome|edge|firefox|brave` (reads the browser session; on Windows this can fail without admin rights, and you must not run it elevated).
+2. `--browser chrome|edge|firefox|brave` when given (reads the browser session; on Windows Chromium browsers need admin rights, and you must not run it elevated).
+3. A cookies file at `~/.nano-banana-pro/cookies.json` (or `$NANO_BANANA_HOME/cookies.json`).
+
+**Since Gemini web build 20261119, `__Secure-1PSID` + `__Secure-1PSIDTS` alone no longer work**: Google redirects them to the sign-in page (see gemini-webapi issue #381). The full set of Google cookies of a signed-in profile is needed, each on its own domain, including `SID`, `HSID` and `APISID`. The script patches the library for this and never hangs on login (60 s limit).
+- **`--browser firefox`** with gemini.google.com signed in on Firefox is the tested path: Firefox is readable without admin rights and exposes the full set.
+- A Cookie-Editor JSON export (a list) saved as `cookies.json` also loads. It must contain `SID`, `HSID` and `APISID`; Brave exports were tested and miss them (rejected). Edge/Chrome exports are untested.
+- "Only gemini-auto available", `QUOTA unavailable` or a "you're signed out" reply means the session is not authenticated.
 
 Never print, read aloud, log or commit cookie values, and do not open the cookies file just to look at it. The script locks `~/.nano-banana-pro` to the current user on the first run. Windows may save the file as `cookies.json.txt`.
 
